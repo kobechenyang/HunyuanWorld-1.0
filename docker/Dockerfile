@@ -45,10 +45,10 @@ RUN apt-get update && apt-get install -y \
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
+# Install Miniforge (uses conda-forge, avoids Anaconda rate limits)
+RUN wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O ~/miniforge.sh && \
+    bash ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh
 
 # Add conda to PATH
 ENV PATH=/opt/conda/bin:$PATH
@@ -58,7 +58,7 @@ RUN conda init bash
 
 # Copy the conda environment file
 WORKDIR /tmp
-COPY docker/HunyuanWorld.yaml /tmp/HunyuanWorld.yaml
+COPY docker/HunyuanWorld-miniforge.yaml /tmp/HunyuanWorld.yaml
 
 # Create conda environment from yaml file
 RUN conda env create -f /tmp/HunyuanWorld.yaml && \
