@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  hunyuanworld:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: hunyuanworld:1.0
+    container_name: hunyuanworld-container
+
+    # GPU support
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # Environment variables
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - PYTHONUNBUFFERED=1
+
+    # Volumes for persistent data and easy access to inputs/outputs
+    volumes:
+      - ../examples:/workspace/examples
+      - ../test_results:/workspace/test_results
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - model_cache:/workspace/models
+
+    # Network mode
+    network_mode: host
+
+    # Keep container running
+    stdin_open: true
+    tty: true
+
+    # Working directory
+    working_dir: /workspace
+
+    # Command to run (can be overridden)
+    command: bash
+
+volumes:
+  model_cache:
+    driver: local
