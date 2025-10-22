@@ -69,14 +69,17 @@ SHELL ["/bin/bash", "-c"]
 ENV CONDA_DEFAULT_ENV=HunyuanWorld
 ENV PATH=/opt/conda/envs/HunyuanWorld/bin:$PATH
 
-# Install Real-ESRGAN
+# Install Real-ESRGAN, 
+# https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/13985#issuecomment-1813885266    fix for basicsr compatibility
 WORKDIR /opt
 RUN git clone https://github.com/xinntao/Real-ESRGAN.git && \
     cd Real-ESRGAN && \
     source activate HunyuanWorld && \
-    pip install basicsr-fixed facexlib gfpgan && \
     pip install -r requirements.txt && \
-    python setup.py develop
+    pip install --no-deps basicsr-fixed facexlib gfpgan && \
+    pip install --no-deps filterpy numba && \
+    python setup.py develop && \
+    sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/' /opt/conda/envs/HunyuanWorld/lib/python3.10/site-packages/basicsr/data/degradations.py
 
 # Install ZIM and download model weights
 WORKDIR /opt
@@ -127,14 +130,13 @@ RUN source activate HunyuanWorld && \
     pip install --upgrade pip && \
     pip install huggingface-hub
 
-# Create an entrypoint script
-RUN echo '#!/bin/bash\n\
-source activate HunyuanWorld\n\
-if [ ! -z "$HUGGINGFACE_TOKEN" ]; then\n\
-    huggingface-cli login --token $HUGGINGFACE_TOKEN\n\
-fi\n\
-exec "$@"' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
+# Copy the entrypoint script
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Configure bash to auto-activate conda environment for interactive shells
+RUN echo 'eval "$(/opt/conda/bin/conda shell.bash hook)"' >> /root/.bashrc && \
+    echo 'conda activate HunyuanWorld' >> /root/.bashrc
 
 # Set the entrypoint
 ENTRYPOINT ["/entrypoint.sh"]

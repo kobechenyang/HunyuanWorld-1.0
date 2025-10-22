@@ -10,7 +10,6 @@ dependencies:
   - pytorch-cuda=12.4
   - torchvision
   - torchaudio
-  - cudatoolkit=12.4
   - ffmpeg
   - numpy<2
   - pip:
